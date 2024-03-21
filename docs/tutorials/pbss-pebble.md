@@ -1,35 +1,36 @@
 ---
 sidebar_label: Run with PBSS and PebbleDB
-description: Introduce to running opBNB Node with PBSS and Pebble
+description: Guide on running an opBNB Node with PBSS and PebbleDB
 ---
 
-# Run with PBSS(Path-Base Scheme Storage) and Pebble DB
+# Run with PBSS (Path-Based Scheme Storage) and PebbleDB
 
-## How to run op-geth with PBSS and Pebble DB
+## How to Run op-geth with PBSS and PebbleDB
 
-Add flags when starting op-geth.
+To start op-geth with PBSS and PebbleDB, include the following flags:
 
 ```bash
 --state.scheme path --db.engine pebble
 ```
 
-The log outputs information indicating that PBSS and Pebble DB have been started successfully.
+:::info
+We recommend using version v0.3.1-alpha or later to activate this feature.
+:::
+
+Upon successful startup, the logs will confirm the initiation of PBSS and PebbleDB:
 
 ```bash
 INFO [03-21|07:00:25.684] Using pebble as the backing database
 INFO [03-21|07:00:47.039] State scheme set by user                 scheme=path
 ```
 
-## PBSS(Path-Base Scheme Storage)
+## PBSS (Path-Based Scheme Storage)
 
-In the PBSS, the trie nodes are saved in disk with the encoded path and specific key prefix as key.
-So the PBSS's MPT will override the older one because of the same key for account trie and storage 
-trie, it can not only achieve the goal of **pruning online** but also can **reduce data redundancy dramatically**.
+PBSS stores trie nodes on disk using the encoded path and a specific key prefix as the key. This approach allows PBSS's Merkle Patricia Trie (MPT) to overwrite older data due to the shared key between the account trie and storage trie. This feature not only enables **online pruning** but also significantly **reduces data redundancy**.
 
-PBSS consists of 128 difflayers (in memory) and one disklayer, which can be illustrated by the following 
-diagram. Difflayer only stores changed state data.
+PBSS architecture comprises 128 difflayers (in memory) and one disk layer, as depicted below. Difflayers store only the state data changes.
 
-```bash
+```plaintext
 +-------------------------------------------+
 | Block X+128 State                         |
 +-------------------------------------------+
@@ -37,39 +38,33 @@ diagram. Difflayer only stores changed state data.
 +-------------------------------------------+
 |              .......                      |
 +-------------------------------------------+
-| Block X+1 State,  Bottom-most diff layer  |
+| Block X+1 State, Bottom-most diff layer   |
 +-------------------------------------------+
-| Block X State, Disk layer(singleton trie) |
+| Block X State, Disk layer (singleton trie)|
 +-------------------------------------------+
 ```
 
-**PBSS has better read performance**, trie access and iteration is much faster than before, store 
-a single version of the state trie persisted to disk, and keep new tries (state/storage/account 
-trie changes) in memory only.
+**PBSS offers superior read performance**, with faster trie access and iteration. It maintains a single version of the state trie on disk and keeps new tries (changes to the state/storage/account trie) only in memory.
 
-### Restriction
+### Restrictions
 
-* **Only supports querying the status data of the last 129 blocks**
-  
-  The RPC requests that require lookup longer status data return the error `missing trie node ${hash} (path ${path})`.
+* **Supports queries for only the last 129 blocks' state data**
 
-* **The withdrawal function of opBNB is not supported**
-  
-  It may query the status data of one hour before to get withdrawal proof.
-  
-  > Later version will support withdrawal.
+  RPC requests requiring data beyond this range will return an error: `missing trie node ${hash} (path ${path})`.
+  Only RPC methods that need to query trie data, such as `eth_getProof`, will be impacted by this limitation, while others will remain unaffected.
 
+* **The withdrawal function of opBNB might not be supported**
+
+  This function might require querying state data from an hour earlier to obtain a withdrawal proof, which is not supported yet. Future versions will address this limitation.
 
 ## PebbleDB
 
-PebbleDB was adopted in go-ethereum as well, which has become the default database for the community.
+PebbleDB, now the default database for the community, has been integrated into go-ethereum. It replaces LevelDB, which lacks a throttle mechanism for flushes and compactions, leading to latency spikes during intense read and write operations.
 
-opBNB PBSS replaces LevelDB with the optimized Pebble DB. LevelDB operates without a throttle mechanism 
-for flushes and compactions, consistently running at maximum speed and leading to notable latency spikes 
-for both write and read operations.
-
-On the other hand, PebbleDB employs separate rate limiters for flushes and compactions. This mechanism 
-ensures operations occur only as fast as necessary, **preventing unnecessary strain on disk bandwidth**.
+Conversely, PebbleDB features separate rate limiters for flushes and compactions, conducting operations as needed and **reducing unnecessary disk bandwidth consumption**.
 
 ## FAQ
 
+### Can I change the `state.scheme` or `db.engine` for an existing node?
+
+No, you cannot change the `state.scheme` or `db.engine` for an existing node. You must start a new node with the desired configuration.
