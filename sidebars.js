@@ -80,6 +80,7 @@ const sidebars = {
       items:[
         'tutorials/running-a-local-development-environment',
         'tutorials/running-a-local-node',
+        'tutorials/pbss-pebble',
         'tutorials/full-stack-dapp',
         'tutorials/opbnbscan-verify-hardhat-truffle',
       ],

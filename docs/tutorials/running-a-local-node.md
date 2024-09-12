@@ -134,6 +134,9 @@ export P2P_BOOTNODES="enr:-KO4QKFOBDW--pF4pFwv3Al_jiLOITj_Y5mr1Ajyy2yxHpFtNcBfkZ
   --bootnodes=$P2P_BOOTNODES
 ```
 
+op-geth runs with [PBSS(Path-Base Scheme Storage) and PebbleDB](./pbss-pebble.md) by adding the flags `--state.scheme path` and `--db.engine pebble`.
+**It's recommended to start a new node with this mode, which provides better performance and less disk space usage.**
+
 op-node
 
 ```bash
